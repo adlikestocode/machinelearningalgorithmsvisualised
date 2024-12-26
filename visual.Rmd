@@ -1,0 +1,313 @@
+---
+title: "Data visualisation of machine learning concepts"
+author: "aditya vk"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+
+## ABSTRACT
+
+This project aims to quantify my skills in AI and ML, particularly in linear regression through gradient descent. I followed the Stanford CS229: Machine Learning | Summer 2019, Dr. Anand Avati's YouTube lecture series to learn the theory behind machine learning, supplementing my knowledge and skills gained from the "Neural Networks and Deep Learning" course by Andrew Ng, which is part of the Deep Learning Specialization by deeplearning.ai.
+
+To visualize the concepts taught in lectures 1-4, I used R, Plotly, and the built-in Iris dataset to perform linear regression operations and visualize them in various plots. This helped me better understand topics like gradient descent and loss functions.
+
+
+```{r,echo=FALSE}
+
+library(plotly)
+```
+
+
+## INTRODUCTION
+
+In machine learning, we primarily encounter two types of problems: regression and classification. Regression problems are those where the model predicts a continuous value based on the dataset it is trained on. An example is predicting housing prices based on features like living area and price, where the living area is the input, and the price is the output.
+
+
+Learning algorithms that are provided both input and output are called supervised learning algorithms, while algorithms that are given only input data and not the output are referred to as unsupervised learning algorithms.
+
+(![Generalised flowchart for supervised learning](blank diagram.png))
+
+
+
+Linear regression is one of the simplest forms of regression algorithms. It can later be enhanced to create more complex models using techniques like basis function expansion or kernels. Linear regression is a type of supervised machine learning algorithm that computes the linear relationship between the dependent variable and one or more independent features by fitting a linear equation to the observed data:
+
+
+$$
+h_{\theta}(x) = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + \cdots + \theta_d x_d
+\quad \text{where} \quad \theta \in \mathbb{R}^{d+1}
+$$
+
+The goal of linear regression is to learn the optimal parameters for θ\theta such that the following equation holds true:
+
+$$
+h_{\theta}(x) = \sum_{i=1}^d \theta_i x_i + \theta_0
+$$
+
+We determine the value of θ\theta by minimizing a cost or loss function. The cost function is usually represented as:
+$$
+J(\theta) = \frac{1}{2} \sum_{i=1}^{n} \left( h_{\theta}(x^{(i)}) - y^{(i)} \right)^2
+$$
+From this, we derive the equation for θ^\hat{\theta}, which is the value of θ\theta that minimizes the cost function:
+$$
+\hat{\theta} = \arg \min_{\theta} \sum_{i=1}^{n} \left( h_{\theta}(x^{(i)}) - y^{(i)} \right)^2
+$$
+The basic goal is to find the smallest possible value for θ^\hat{\theta}.
+The loss function can be visualized using a 3D surface plot, which typically shows a bowl-shaped curve where the center represents the minimum of the function.
+```{r}
+library(plotly)
+
+# Use built-in iris dataset
+iris <- iris
+
+# Fit the linear regression model
+model <- lm(Petal.Length ~ Sepal.Length, data = iris)
+
+# Extract data
+x <- iris$Sepal.Length
+y <- iris$Petal.Length
+
+# Generate predictions using the model
+predictions <- predict(model, newdata = iris)
+
+# Normalize features (optional)
+x_normalized <- scale(x)
+y_normalized <- scale(y)
+
+# 1. Data for 3D surface plot of the cost function
+cost_function <- function(theta0, theta1, x, y) {
+  predictions <- theta0 + theta1 * x
+  squared_errors <- (predictions - y)^2
+  if (any(is.nan(squared_errors))) {
+    return(NA)
+  } else {
+    return(mean(squared_errors))
+  }
+}
+
+# Create a grid of theta0 and theta1 values
+theta0_values <- seq(-5, 5, length.out = 100)  # Adjusted range for normalized data
+theta1_values <- seq(-5, 5, length.out = 100)
+
+# Calculate cost function values for each combination of theta0 and theta1
+cost_matrix <- outer(theta0_values, theta1_values,
+                     Vectorize(function(t0, t1) cost_function(t0, t1, x_normalized, y_normalized)))
+
+# 2. Gradient descent for cost function visualization
+gradient_descent <- function(x, y, learning_rate = 0.01, iterations = 100) {
+  theta0 <- 0
+  theta1 <- 0
+  history <- data.frame(iteration = integer(), theta0 = double(), theta1 = double(), cost = double())
+  
+  for (i in 1:iterations) {
+    predictions <- theta0 + theta1 * x
+    error <- predictions - y
+    cost <- mean(error^2)
+    
+    # Gradients
+    grad_theta0 <- mean(error)
+    grad_theta1 <- mean(error * x)
+    
+    # Update parameters
+    theta0 <- theta0 - learning_rate * grad_theta0
+    theta1 <- theta1 - learning_rate * grad_theta1
+  }
+}
+
+# Perform gradient descent
+gd_history <- gradient_descent(x_normalized, y_normalized)
+
+# 3. Data for 3D surface plot using Plotly
+x <- seq_along(1:ncol(cost_matrix))  # Assuming columns represent theta1 values
+y <- seq_along(1:nrow(cost_matrix))  # Assuming rows represent theta0 values
+df <- expand.grid(x = x, y = y) 
+df$z <- as.vector(t(cost_matrix))
+
+# Create the 3D surface plot using plotly
+gradient <- plot_ly(z = ~t(cost_matrix), type = "surface", 
+                    colorscale = "Viridis", 
+                    reversescale = TRUE, 
+                    contours = list(
+                      x = list(show = TRUE, start = min(1:ncol(cost_matrix)), end = max(1:ncol(cost_matrix)), size = 1), 
+                      y = list(show = TRUE, start = min(1:nrow(cost_matrix)), end = max(1:nrow(cost_matrix)), size = 1) 
+                    ),
+                    opacity = 0.8) 
+
+# Customize the plot
+gradient <- gradient %>% layout(title = "Cost Function Surface",
+                                scene = list(
+                                  xaxis = list(title = "Theta1"), 
+                                  yaxis = list(title = "Theta0"), 
+                                  zaxis = list(title = "Cost")),
+                                showlegend= FALSE)
+
+# Display the plot
+gradient
+
+```
+Note: I will not go into the details of how gradient descent works or its different variants, such as stochastic gradient descent or mini-batch gradient descent. In practice, gradient descent is inefficient because it requires iterating over the entire dataset to complete one iteration. There are more efficient algorithms like stochastic gradient descent or Newton-Raphson's method. However, for this project, I will focus on gradient descent as it is the easiest to explain.
+
+Gradient descent is a numerical or iterative optimization algorithm. The equation for gradient descent in vector notation is:
+
+$$
+\theta^{(1)} = \theta^{(0)} - \alpha \cdot \nabla_{\theta_j} J(\theta^{(0)})
+$$
+Our code repeatedly applies this function until convergence is reached.
+
+```{r ,warning=FALSE, message=FALSE,}
+# Load necessary libraries
+library(plotly)
+
+# Define the Cost Function and Gradients
+cost_function <- function(theta0, theta1) {
+  theta0^2 + theta1^2
+}
+
+grad_theta0 <- function(theta0, theta1) {
+  2 * theta0
+}
+
+grad_theta1 <- function(theta0, theta1) {
+  2 * theta1
+}
+
+# Gradient Descent Parameters
+learning_rate <- 0.1
+iterations <- 50
+theta0 <- numeric(iterations)
+theta1 <- numeric(iterations)
+cost <- numeric(iterations)
+
+# Initial values of theta
+theta0[1] <- runif(1, -1, 1)
+theta1[1] <- runif(1, -1, 1)
+cost[1] <- cost_function(theta0[1], theta1[1])
+
+# Perform Gradient Descent
+for (i in 2:iterations) {
+  theta0[i] <- theta0[i-1] - learning_rate * grad_theta0(theta0[i-1], theta1[i-1])
+  theta1[i] <- theta1[i-1] - learning_rate * grad_theta1(theta0[i-1], theta1[i-1])
+  cost[i] <- cost_function(theta0[i], theta1[i])
+}
+
+# Create a data frame for the gradient path
+grad_path <- data.frame(
+  iteration = 1:iterations,
+  theta0 = theta0,
+  theta1 = theta1,
+  cost = cost
+)
+
+# Heatmap Grid
+theta0_grid <- seq(-1, 1, length.out = 100)
+theta1_grid <- seq(-1, 1, length.out = 100)
+cost_matrix <- outer(theta0_grid, theta1_grid, cost_function)
+
+# Create the Heatmap
+heatmap_plot <- plot_ly(
+  x = theta0_grid,
+  y = theta1_grid,
+  z = cost_matrix,
+  type = "heatmap",
+  colorscale = "Viridis"
+)
+
+# Add Animated Path with Static Heatmap
+animated_plot <- heatmap_plot %>%
+  add_trace(
+    data = grad_path,
+    x = ~theta0,
+    y = ~theta1,
+    frame = ~iteration,  # Use 'iteration' for animation frames
+    type = 'scatter',
+    mode = 'lines+markers',
+    line = list(color = 'black', width = 2),
+    marker = list(size = 6, color = ~cost, colorscale = 'Inferno')
+  ) %>%
+  layout(
+    title = "Gradient Descent Path Animation",
+    xaxis = list(title = "Theta0"),
+    yaxis = list(title = "Theta1"),
+    updatemenus = list(
+      list(
+        type = "buttons",
+        showactive = FALSE,
+        buttons = list(
+          list(label = "Play",
+               method = "animate",
+               args = list(NULL, list(frame = list(duration = 100, redraw = FALSE)))),
+          list(label = "Pause",
+               method = "animate",
+               args = list(NULL, list(frame = list(duration = 0, redraw = FALSE))))
+        )
+      )
+    )
+  ) %>%
+  animation_opts(
+    frame = 200,
+    transition = 50,
+    redraw = TRUE
+  )
+animated_plot
+```
+We can visualize gradient descent as a 2D heatmap, where the point represents the current value of the parameters at each iteration. The initial point can be any random value on the heatmap. Notice how the algorithm converges in less than 15 iterations.
+
+
+While basic gradient descent follows a continuous path, versions like stochastic gradient descent can take seemingly random paths but are more computationally efficient than standard gradient descent.
+
+
+Upon completing the algorithm, we can evaluate its performance by plotting the regression line against the actual data points.
+```{r}
+# Load necessary libraries
+library(plotly)
+
+# Load the Iris dataset
+data(iris)
+
+# Fit a linear model: Predict Sepal.Length from Petal.Length (you can choose other features as well)
+lm_model <- lm(Sepal.Length ~ Petal.Length, data = iris)
+
+# Get the actual and predicted values
+actual_values <- iris$Sepal.Length
+predicted_values <- predict(lm_model)
+
+# Create the plotly plot
+plot <- plot_ly() %>%
+  # Actual values as scatter points
+  add_markers(
+    x = iris$Petal.Length, y = actual_values, 
+    name = 'Actual',
+    marker = list(color = 'blue', size = 8)
+  ) %>%
+  # Predicted values as a line (sorted for smooth line)
+  add_lines(
+    x = sort(iris$Petal.Length), 
+    y = predicted_values[order(iris$Petal.Length)], 
+    name = 'Predicted', 
+    line = list(color = 'red')
+  ) %>%
+  layout(
+    title = "Linear Regression: Actual vs Predicted Values (Iris Dataset)",
+    xaxis = list(title = "Petal Length"),
+    yaxis = list(title = "Sepal Length")
+  )
+
+# Display the plot
+plot
+
+```
+
+As shown in the plot, the learned regression line is compared with the actual values of the data set. This is a standard way of visualizing the performance of regression algorithms.
+
+
+## REFERENCES
+
+- [Linear Regression in Machine Learning - GeeksforGeeks](https://www.geeksforgeeks.org/linear-regression-in-machine-learning/)
+- [Stanford CS229: Machine Learning | Summer 2019 | Lecture 4 - Linear Regression](https://cs229.stanford.edu/summer2019/cs229-notes4.pdf)
+- [Deep Learning | Coursera](https://www.coursera.org/learn/neural-networks-deep-learning)
+- [Udemy YouTube 16x9 30sec 2024](https://www.udemy.com/)
+
+
+
+
