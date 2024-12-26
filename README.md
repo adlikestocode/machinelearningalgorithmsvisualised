@@ -1,4 +1,3 @@
-Here’s a well-structured README template for your project. You can modify it as needed:
 
 ---
 
