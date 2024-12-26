@@ -92,8 +92,7 @@ These visualizations help to understand how the gradient descent algorithm minim
 ## Links
 
 - [Link to GitHub repository](https://github.com/adlikestocode/machinelearningalgorithmsvisualised)
-- [Link to Interactive Visualizations](Your link to the hosted page here)
-- [Link to Related Projects](add any other relevant links here)
+- [Link to Interactive Visualizations](https://adlikestocode.github.io/machinelearningalgorithmsvisualised/))
 
 ---
 
