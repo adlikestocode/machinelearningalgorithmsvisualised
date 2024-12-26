@@ -96,4 +96,3 @@ These visualizations help to understand how the gradient descent algorithm minim
 
 ---
 
-This template covers all the key aspects of your project and gives users a clear understanding of what you're doing. You can copy and paste this structure and fill in the appropriate links or additional details as necessary. Let me know if you need any further modifications!
